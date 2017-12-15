@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>test1</title>
+<style>
+html, body { padding;0; margin:0; }
+#surface-viewer { width:800px; height:600px; border:solid 1px black; position:absolute; left:10px; top:10px; }
+#blocklyDiv  { width:800px; height:800px; border:solid 1px black; position:absolute; left:816px; top:10px; }
+</style>
+<script src="twgl-full_3.min.js"></script>
+<script src="fpsmeter.min.js"></script>
+<script src="shader_programs.js"></script>
+<script src="surface_viewer.js"></script>
+<script src="blockly_compressed.js"></script>
+</head>
+<body>
+<canvas id="surface-viewer" width="800" height="600"></canvas>
+<div id="blocklyDiv" ></div>
+ 
+ <xml id="toolbox" style="display: none">
+      <block type="u_param"></block>
+      <block type="v_param"></block>
+      <block type="math_number"></block>
+      <block type="translation"></block>
+      <block type="rotation"></block>
+</xml>
+
+
+
+<script src="surfer_blockly.js"></script>
+<script>
+var meter, viewer, render,animate;
+var time;
+
+function initialize() {
+    meter = new FPSMeter(null, {
+        interval:100,
+        smoothing:10,
+        show: 'fps',
+        decimals: 1,
+        maxFps: 60,
+        threshold: 100,
+        
+        position: 'absolute',
+        zIndex: 10,
+        left: '10px',
+        top: '720px',
+        theme: 'dark',
+        heat: 1,
+        graph: 1,
+        history: 20
+    });
+    viewer = new SurfaceViewer('surface-viewer');
+    render = function(time) {
+        meter.tickStart();
+        if(gl.NO_ERROR != gl.getError()) throw "uff";
+        time *= 0.001;
+        viewer.drawScene(time);
+        if(gl.NO_ERROR != gl.getError()) throw "uff";
+        meter.tick();
+    }
+    time = 0.0;
+    animate = function () {
+        render(time); time += 25.0;
+        requestAnimationFrame(animate);        
+    }
+    animate();
+    viewer.programManager.patchProgram("z = 0.2 * sin(u*2.0*PI) * cos(v*2.0*PI+t); p = vec3(u,v,z);");
+}
+function please(s) {
+    viewer.programManager.patchProgram(s[0]);
+
+}
+
+initialize();
+
+
+</script>
+</body>
+</html>
+
