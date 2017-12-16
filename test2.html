@@ -6,7 +6,8 @@
 <style>
 html, body { padding;0; margin:0; }
 #surface-viewer { width:800px; height:600px; border:solid 1px black; position:absolute; left:10px; top:10px; }
-#blocklyDiv  { width:800px; height:800px; border:solid 1px black; position:absolute; left:816px; top:10px; }
+#blocklyDiv  { width:800px; height:600px; border:solid 1px black; position:absolute; left:816px; top:10px; }
+#galleryDiv  { width:1600px; height:200px; border:solid 1px black; position:absolute; left:10px; top:616px; }
 </style>
 <script src="twgl-full_3.min.js"></script>
 <script src="fpsmeter.min.js"></script>
@@ -17,16 +18,45 @@ html, body { padding;0; margin:0; }
 <body>
 <canvas id="surface-viewer" width="800" height="600"></canvas>
 <div id="blocklyDiv" ></div>
- 
+<div id="galleryDiv">
+    <a href="javascript:loadFromXml('d1');"><img src="d1.png"></a>
+    <a href="javascript:loadFromXml('d2');"><img src="d1.png"></a>
+</div>
+
  <xml id="toolbox" style="display: none">
       <block type="u_param"></block>
       <block type="v_param"></block>
       <block type="math_number"></block>
       <block type="translation"></block>
       <block type="rotation"></block>
+      <block type="fun"></block>
+      <block type="linear"></block>
 </xml>
 
 
+<xml id="d1" style="display: none" xmlns="http://www.w3.org/1999/xhtml">
+    <variables></variables>
+    <block type="translation" id="X`h:K(bx$qF@DsTyIx;^" x="44" y="126">
+        <value name="X"><block type="u_param" id="#WPz2uS^9eXJ.p,?T:dr"></block></value>
+        <value name="Y"><block type="v_param" id="*FT~#0{)-(On8fsIJAD("></block></value>
+        <next>
+            <block type="rotation" id="a4xyoUsGqg{xT,P{m0zi"><field name="AXIS">Y</field><value name="ANGLE">
+                <block type="v_param" id="D:JmHyo[S`}.R~uEc7]k"></block>
+            </value></block></next>
+        </block>
+</xml>
+
+<xml id="d2" style="display: none" xmlns="http://www.w3.org/1999/xhtml">
+        <variables></variables>
+        <block type="translation" id="X`h:K(bx$qF@DsTyIx;^" x="44" y="126"><value name="X"><block type="math_number" id="~`~4{G-ol)WT2sB~[~_G"><field name="NUM">0.2</field></block></value><next><block type="rotation" id="6Iy~o`X|LU9)Z:miy@i)"><field name="AXIS">Y</field>
+            <value name="ANGLE"><block type="u_param" id=":p5Xu0g`ec(9*Q#ECd+A"></block></value>
+            <next><block type="translation" id="pW?$R3#NWyljEu#Aqh*j">
+                <value name="X"><block type="math_number" id="$~lo)xC@j45Gtoth)K2Z">
+                    <field name="NUM">1</field></block></value><next>
+                        <block type="rotation" id="s:wlObK]E.?bj~PR^xQJ"><field name="AXIS">Z</field>
+                            <value name="ANGLE"><block type="v_param" id="t8A)8[3Nn}@pyb5zEW{y"></block></value></block>
+                        </next></block></next></block></next></block>
+</xml>
 
 <script src="surfer_blockly.js"></script>
 <script>
@@ -41,7 +71,7 @@ function initialize() {
         decimals: 1,
         maxFps: 60,
         threshold: 100,
-        
+
         position: 'absolute',
         zIndex: 10,
         left: '10px',
@@ -63,10 +93,11 @@ function initialize() {
     time = 0.0;
     animate = function () {
         render(time); time += 25.0;
-        requestAnimationFrame(animate);        
+        requestAnimationFrame(animate);
     }
     animate();
-    viewer.programManager.patchProgram("z = 0.2 * sin(u*2.0*PI) * cos(v*2.0*PI+t); p = vec3(u,v,z);");
+    // viewer.programManager.patchProgram("z = 0.2 * sin(u*2.0*PI) * cos(v*2.0*PI+t); p = vec3(u,v,z);");
+    // load();
 }
 function please(s) {
     viewer.programManager.patchProgram(s[0]);
@@ -75,8 +106,25 @@ function please(s) {
 
 initialize();
 
+function save() {
+    var xml = Blockly.Xml.workspaceToDom(ws);
+    var xml_text = Blockly.Xml.domToText(xml);
+    localStorage.setItem('surfer-ws',xml_text);
+}
+
+function loadFromXml(id) {
+    ws.clear();
+    var elem = document.getElementById(id);
+    Blockly.Xml.domToWorkspace(elem, ws);
+}
+
+function loadFromStorage() {
+    ws.clear();
+    var xml_text = localStorage.getItem('surfer-ws');
+    var xml = Blockly.Xml.textToDom(xml_text);
+    Blockly.Xml.domToWorkspace(xml, ws);
+}
 
 </script>
 </body>
 </html>
-

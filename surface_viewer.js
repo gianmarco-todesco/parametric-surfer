@@ -7,20 +7,20 @@ var gl;
 var shape;
 
 function SurfaceViewer(canvasName) {
-    
-    gl = twgl.getWebGLContext(document.getElementById(canvasName));
+
+    gl = this.gl = twgl.getWebGLContext(document.getElementById(canvasName));
     shape = this.shape = twgl.primitives.createSphereBufferInfo(gl, 1, 120, 120);
     this.grid = this.makeGrid(gl);
-    
+
     this.buttonDown = false;
     this.theta = 0;
     this.phi = 0;
-    
+
     var _this = this;
     gl.canvas.addEventListener('mousedown', function(e) {_this.onMouseDown(e);}, false);
     gl.canvas.addEventListener('mouseup',   function(e) {_this.onMouseUp(e);}, false);
     gl.canvas.addEventListener('mousemove', function(e) {_this.onMouseMove(e);}, false);
-    
+
     gl.canvas.addEventListener('mousewheel', function(e) {
         console.log(e);
         e.stopPropagation();
@@ -28,14 +28,14 @@ function SurfaceViewer(canvasName) {
         _this.distance = Math.max(5, _this.distance - e.wheelDelta *0.01);
     }, false);
 
-    this.programManager = new ProgramManager(gl);    
-    
-    
+    this.programManager = new ProgramManager(gl);
+
+
     this.camera = m4.identity();
     this.view = m4.identity();
     this.viewProjection = m4.identity();
     this.distance = 5;
-    
+
     this.uniforms = {
         u_lightWorldPos: [1, 8, 10],
         u_lightColor: [1, 1, 1, 1],
@@ -49,7 +49,7 @@ function SurfaceViewer(canvasName) {
         u_worldViewProjection: m4.identity(),
         u_time: 0,
         u_cc: [0,0,0,0,0,0,0,0,0,0]
-    };    
+    };
 }
 
 SurfaceViewer.prototype.onMouseDown = function(e) {
@@ -73,23 +73,23 @@ SurfaceViewer.prototype.onMouseMove = function(e) {
         console.log(dx,dy);
         this.lastPos = p;
         this.theta += dy*0.01;
-        this.phi += dx*0.01;         
+        this.phi += dx*0.01;
     }
 }
 
 
 
 SurfaceViewer.prototype.drawScene = function(time) {
-    
+
     twgl.resizeCanvasToDisplaySize(gl.canvas);
-    
+
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.enable(gl.DEPTH_TEST);
     // gl.enable(gl.CULL_FACE);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    
-    
+
+
+
     var eye = v3.copy([0, 0, this.distance]);
     var target = v3.copy([0, 0, 0]);
     var up = [0, 1, 0];
@@ -103,12 +103,12 @@ SurfaceViewer.prototype.drawScene = function(time) {
         255, 255, 255, 255,
       ],
     });
-    
+
     // set viewProjection
     var fovy = 30 * Math.PI / 180;
     var projection = m4.perspective(
-        fovy, 
-        gl.canvas.clientWidth / gl.canvas.clientHeight, 
+        fovy,
+        gl.canvas.clientWidth / gl.canvas.clientHeight,
         0.5, 200);
     m4.lookAt(eye, target, up, this.camera);
     m4.inverse(this.camera, this.view);
@@ -132,16 +132,16 @@ SurfaceViewer.prototype.drawScene = function(time) {
     twgl.setBuffersAndAttributes(gl, pi, shape);
     this.uniforms.u_time = time;
     twgl.setUniforms(pi, this.uniforms);
-    twgl.drawBufferInfo(gl, shape, gl.TRIANGLES);     
-    
+    twgl.drawBufferInfo(gl, shape, gl.TRIANGLES);
+
     pi = this.programManager.linesProgram;
     gl.useProgram(pi.program);
     twgl.setBuffersAndAttributes(gl, pi, this.grid);
     this.uniforms.u_time = time;
     twgl.setUniforms(pi, this.uniforms);
-    twgl.drawBufferInfo(gl, this.grid, gl.LINES);     
-    
-    
+    twgl.drawBufferInfo(gl, this.grid, gl.LINES);
+
+
 }
 
 
@@ -156,7 +156,7 @@ SurfaceViewer.prototype.getMouseEventPos = function (e) {
 }
 
 SurfaceViewer.prototype.makeGrid = function(gl) {
-    var m = 100;
+    var m = 9;
     var arrays = {
       position: twgl.primitives.createAugmentedTypedArray(3, m*2),
       color: twgl.primitives.createAugmentedTypedArray(3, m*2),
@@ -166,24 +166,24 @@ SurfaceViewer.prototype.makeGrid = function(gl) {
         arrays.position.push(x0,y0,z0, x1,y1,z1);
         arrays.color.push(r,g,b,r,g,b);
     }
-    
+
     var r = 2.0;
-    
+
     addLine(-r,0,0, r,0,0, 1,0,0);
     addLine(0,-r,0, 0,r,0, 0,1,0);
     addLine(0,0,-r, 0,0,r, 0,0,1);
 
-    var d = 0.1;     
+    var d = 0.1;
     addLine(r,0,0, r-d, d,0, 1,0,0);
     addLine(r,0,0, r-d,-d,0, 1,0,0);
-    
+
     addLine(0,r,0,  d,r-d,0, 0,1,0);
     addLine(0,r,0, -d,r-d,0, 0,1,0);
-    
+
     addLine(0,0,r, 0, d,r-d, 0,0,1);
     addLine(0,0,r, 0,-d,r-d, 0,0,1);
 
 
     var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
-    return bufferInfo;    
+    return bufferInfo;
 }
