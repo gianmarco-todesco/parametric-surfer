@@ -9,7 +9,7 @@ var shape;
 function SurfaceViewer(canvasName) {
 
     gl = this.gl = twgl.getWebGLContext(document.getElementById(canvasName));
-    shape = this.shape = twgl.primitives.createSphereBufferInfo(gl, 1, 120, 120);
+    shape = this.shape = this.makeSurface(gl); // twgl.primitives.createSphereBufferInfo(gl, 1, 120, 120);
     this.grid = this.makeGrid(gl);
 
     this.buttonDown = false;
@@ -41,7 +41,7 @@ function SurfaceViewer(canvasName) {
         u_lightColor: [1, 1, 1, 1],
         u_diffuseMult: [0.5,0.3,0.8,1],
         u_specular: [1, 1, 1, 1],
-        u_shininess: 50,
+        u_shininess: 120,
         u_specularFactor: 1,
         u_viewInverse: this.camera,
         u_world: m4.identity(),
@@ -184,6 +184,34 @@ SurfaceViewer.prototype.makeGrid = function(gl) {
     addLine(0,0,r, 0,-d,r-d, 0,0,1);
 
 
+    var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+    return bufferInfo;
+}
+
+SurfaceViewer.prototype.makeSurface = function(gl) {
+    var m = 200;
+    var arrays = {
+        position: twgl.primitives.createAugmentedTypedArray(3, m*m),
+        texcoord: twgl.primitives.createAugmentedTypedArray(2, m*m),
+        indices: []
+    };
+    for(var i=0;i<m;i++) {
+        var u = i/(m-1);
+        for(var j=0;j<m;j++) {
+            var k = i*m+j;
+            arrays.position.push(0,0,0);
+            var v = j/(m-1);
+            arrays.texcoord.push(u*0.99,v*0.99);
+        }
+    }
+  
+    for(var i=0;i+1<m;i++) {
+        for(var j=0;j+1<m;j++) {
+            var k = i*m+j;
+            arrays.indices.push(k,k+1,k+1+m,  k,k+1+m,k+m);
+        }
+    }
+    
     var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
     return bufferInfo;
 }

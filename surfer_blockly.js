@@ -158,7 +158,7 @@ MyGen['rotation'] = function(blk) {
     var angle =  getFieldValue(blk, 'ANGLE', '0.0');
     var fn = 'rx';
     if(axis == 'Z') fn = 'rz'; else if(axis == 'Y') fn = 'ry';
-    return 'p = '+fn+'(p,(' + angle + ')*PI*0.5);';
+    return 'p = '+fn+'(p,(' + angle + ')*PI);';
 };
 MyGen['translation'] = function(blk) {
     var x = getFieldValue(blk, 'X', '0.0');
@@ -224,7 +224,10 @@ function foo() {
  }
 
 
- var ws = Blockly.inject('blocklyDiv', {toolbox: document.getElementById('toolbox')});
+ var ws = Blockly.inject('blocklyDiv', {
+    toolbox: document.getElementById('toolbox'),
+    trashcan: true,
+    });
 
 
  ws.addChangeListener(foo);

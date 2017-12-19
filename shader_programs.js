@@ -30,21 +30,18 @@ uniform float u_cc[10];
 
 
 vec3 rx(vec3 p, float ang) {
-    ang *= PI;
     float cs = cos(ang);
     float sn = sin(ang);
     return vec3(p.x,cs*p.y-sn*p.z,sn*p.y+cs*p.z);
 }
 
 vec3 ry(vec3 p, float ang) {
-    ang *= PI;
     float cs = cos(ang);
     float sn = sin(ang);
     return vec3(cs*p.x-sn*p.z,p.y,sn*p.x+cs*p.z);
 }
 
 vec3 rz(vec3 p, float ang) {
-    ang *= PI;
     float cs = cos(ang);
     float sn = sin(ang);
     return vec3(cs*p.x-sn*p.y,sn*p.x+cs*p.y,p.z);
@@ -105,7 +102,7 @@ void main() {
   float v = a_texcoord.y;
   
   vec4 pos = vec4(fun(u,v),1.0);
-  float h = 0.001;
+  float h = 0.00001;
   vec3 dfdu = fun(u+h,v)-fun(u-h,v);
   vec3 dfdv = fun(u,v+h)-fun(u,v-h);
   vec3 norm = normalize(cross(dfdu,dfdv));
@@ -160,7 +157,7 @@ void main() {
   vec4 litR = lit(cs,dot(a_normal, halfVector), u_shininess);
   vec4 outColor = vec4((
   u_lightColor * (diffuseColor * litR.y +
-                0.2 * litR.z * u_specularFactor)).rgb,
+                0.7 * litR.z * u_specularFactor)).rgb,
       diffuseColor.a);
   gl_FragColor = outColor;
 }
