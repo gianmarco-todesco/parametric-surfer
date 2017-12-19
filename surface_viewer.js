@@ -8,7 +8,7 @@ var shape;
 
 function SurfaceViewer(canvasName) {
 
-    gl = this.gl = twgl.getWebGLContext(document.getElementById(canvasName));
+    gl = this.gl = twgl.getWebGLContext(document.getElementById(canvasName), {preserveDrawingBuffer   : true});
     shape = this.shape = this.makeSurface(gl); // twgl.primitives.createSphereBufferInfo(gl, 1, 120, 120);
     this.grid = this.makeGrid(gl);
 

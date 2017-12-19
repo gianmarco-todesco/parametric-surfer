@@ -91,6 +91,15 @@ Blockly.defineBlocksWithJsonArray([
       "colour": 40,
       "tooltip": "",
       "helpUrl": ""
+    }
+    ,
+    {
+      "type": "t_param",
+      "message0": "T",
+      "output": null,
+      "colour": 40,
+      "tooltip": "",
+      "helpUrl": ""
     },
     {
       "type": "linear",
@@ -227,6 +236,7 @@ function foo() {
  var ws = Blockly.inject('blocklyDiv', {
     toolbox: document.getElementById('toolbox'),
     trashcan: true,
+    horizontalLayout: true,
     });
 
 
