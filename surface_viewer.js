@@ -7,22 +7,25 @@ var gl;
 var shape;
 
 function SurfaceViewer(canvasName) {
-
-    gl = this.gl = twgl.getWebGLContext(document.getElementById(canvasName), {preserveDrawingBuffer   : true});
-    shape = this.shape = this.makeSurface(gl); // twgl.primitives.createSphereBufferInfo(gl, 1, 120, 120);
+    var canvas = document.getElementById(canvasName);
+    gl = this.gl = twgl.getWebGLContext(canvas, {preserveDrawingBuffer   : true});
     this.grid = this.makeGrid(gl);
 
     this.buttonDown = false;
-    this.theta = 0;
-    this.phi = 0;
+    this.theta0 = 0.2;
+    this.theta1 = Math.PI - this.theta0;
+    this.theta = 0.7;
+    this.phi = 3.71;
 
     var _this = this;
-    gl.canvas.addEventListener('mousedown', function(e) {_this.onMouseDown(e);}, false);
-    gl.canvas.addEventListener('mouseup',   function(e) {_this.onMouseUp(e);}, false);
-    gl.canvas.addEventListener('mousemove', function(e) {_this.onMouseMove(e);}, false);
+    gl.canvas.addEventListener('mousedown', 
+        function(e) {_this.onMouseDown(e);}, false);
+    gl.canvas.addEventListener('mouseup',   
+        function(e) {_this.onMouseUp(e);}, false);
+    gl.canvas.addEventListener('mousemove', 
+        function(e) {_this.onMouseMove(e);}, false);
 
     gl.canvas.addEventListener('mousewheel', function(e) {
-        console.log(e);
         e.stopPropagation();
         e.preventDefault();
         _this.distance = Math.max(5, _this.distance - e.wheelDelta *0.01);
@@ -34,7 +37,7 @@ function SurfaceViewer(canvasName) {
     this.camera = m4.identity();
     this.view = m4.identity();
     this.viewProjection = m4.identity();
-    this.distance = 5;
+    this.distance = 6.5;
 
     this.uniforms = {
         u_lightWorldPos: [1, 8, 10],
@@ -50,6 +53,9 @@ function SurfaceViewer(canvasName) {
         u_time: 0,
         u_cc: [0,0,0,0,0,0,0,0,0,0]
     };
+    
+    var obj = this.makeFoo2();
+    this.objects = [obj];
 }
 
 SurfaceViewer.prototype.onMouseDown = function(e) {
@@ -70,9 +76,9 @@ SurfaceViewer.prototype.onMouseMove = function(e) {
         var p = this.getMouseEventPos(e);
         var dx = p.x - this.lastPos.x;
         var dy = p.y - this.lastPos.y;
-        console.log(dx,dy);
         this.lastPos = p;
-        this.theta += dy*0.01;
+        this.theta = Math.max(this.theta0, 
+                     Math.min(this.theta1, this.theta - dy*0.01));
         this.phi += dx*0.01;
     }
 }
@@ -120,21 +126,27 @@ SurfaceViewer.prototype.drawScene = function(time) {
     var world = uni.u_world;
     m4.identity(world);
     //m4.translate(world, obj.translation, world);
-    m4.rotateX(world, this.theta, world);
+    m4.rotateX(world, -this.theta, world);
     m4.rotateZ(world, this.phi, world);
 
     m4.transpose(
        m4.inverse(world, uni.u_worldInverseTranspose), uni.u_worldInverseTranspose);
     m4.multiply(this.viewProjection, uni.u_world, uni.u_worldViewProjection);
 
-    var pi = this.programManager.getCurrentProgramInfo();
-    gl.useProgram(pi.program);
-    twgl.setBuffersAndAttributes(gl, pi, shape);
-    this.uniforms.u_time = time;
-    twgl.setUniforms(pi, this.uniforms);
-    twgl.drawBufferInfo(gl, shape, gl.TRIANGLES);
-
-    pi = this.programManager.linesProgram;
+    
+    if(this.objects) {
+        var me = this;
+        this.objects.forEach(function(obj) {
+            var pi = obj.prog.pInfo;
+            gl.useProgram(pi.program);
+            twgl.setBuffersAndAttributes(gl, pi, obj.shape);
+            me.uniforms.u_time = time;
+            twgl.setUniforms(pi, me.uniforms);
+            twgl.drawBufferInfo(gl, obj.shape, obj.type);            
+        });
+    }
+    
+    var pi = this.programManager.linesProgram;
     gl.useProgram(pi.program);
     twgl.setBuffersAndAttributes(gl, pi, this.grid);
     this.uniforms.u_time = time;
@@ -144,15 +156,50 @@ SurfaceViewer.prototype.drawScene = function(time) {
 
 }
 
+SurfaceViewer.prototype.setBody = function(body) {
+    if(!this.objects || this.objects.length == 0) return;
+    var obj = this.objects[0];
+    try {
+        obj.prog.setBody(body);
+    }
+    catch(e)
+    {
+        console.log("uh oh", e);
+        obj.prog.setBody('p.x=u;p.y=v;');
+    }
+}
+
 
 SurfaceViewer.prototype.getMouseEventPos = function (e) {
-    /*
-    var rect = e.currentTarget.getBoundingClientRect(),
-    offsetX = e.clientX - rect.left,
-    offsetY = e.clientY - rect.top;
-    return {x:offsetX, y:offsetY};
-    */
     return {x:e.offsetX, y:e.offsetY};
+}
+
+SurfaceViewer.prototype.makeFoo = function(lines) {
+    var gl = this.gl;
+    var arrays = { position: [], color: []};
+    lines.forEach(function(line) {
+        arrays.position.push(...line);
+        console.log(arrays.position);
+        arrays.color.push(0.5,0.5,0.5,1.0, 0.5,0.5,0.5,1.0);
+    });
+    var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+    var obj = {
+        prog: new SimpleShaderProgram(gl),
+        shape: bufferInfo,
+        type: gl.LINES
+    };
+    return obj;
+}
+
+SurfaceViewer.prototype.makeFoo2 = function() {
+    var gl = this.gl;
+    var shape = this.makeSurface(gl,200);
+    var obj = {
+        prog: new SurfaceShaderProgram(gl),
+        shape: shape,
+        type: gl.TRIANGLES
+    };
+    return obj;
 }
 
 SurfaceViewer.prototype.makeGrid = function(gl) {
@@ -188,8 +235,8 @@ SurfaceViewer.prototype.makeGrid = function(gl) {
     return bufferInfo;
 }
 
-SurfaceViewer.prototype.makeSurface = function(gl) {
-    var m = 200;
+SurfaceViewer.prototype.makeSurface = function(gl, m) {
+    m = m || 200;
     var arrays = {
         position: twgl.primitives.createAugmentedTypedArray(3, m*m),
         texcoord: twgl.primitives.createAugmentedTypedArray(2, m*m),
@@ -201,7 +248,7 @@ SurfaceViewer.prototype.makeSurface = function(gl) {
             var k = i*m+j;
             arrays.position.push(0,0,0);
             var v = j/(m-1);
-            arrays.texcoord.push(u*0.99,v*0.99);
+            arrays.texcoord.push(u,v);
         }
     }
   

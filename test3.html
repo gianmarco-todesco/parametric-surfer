@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>test surface viewer</title>
+<script src="twgl-full_3.min.js"></script>
+<script src="shader_programs.js"></script>
+<script src="surface_viewer.js"></script>
+<script src="blockly_compressed.js"></script>
+<script src="surfer_blockly2.js"></script>
+<style>
+canvas { border: solid 1px black; float:left; }
+#blocklyDiv { 
+    border: solid 1px blue; 
+    float:left; 
+    width:900px; height:800px; 
+    margin-left:20px;
+}
+</style>
+</head>
+<body>
+<div>
+<canvas id="surface-viewer" width="800" height="600"></canvas>
+<div id="blocklyDiv" ></div>
+</div>
+
+<script>
+var viewer = new SurfaceViewer('surface-viewer');
+render = function(time) {
+    if(window.meter) meter.tickStart();
+    if(gl.NO_ERROR != gl.getError()) throw "uff";
+    viewer.drawScene(time * 0.001);
+    if(gl.NO_ERROR != gl.getError()) throw "uff";
+    if(window.meter) meter.tick();
+}
+time = 0.0;
+animate = function () {
+    render(time); time += 25.0;
+    requestAnimationFrame(animate);
+}
+animate();
+initializeSurfaceBlockly('blocklyDiv');
+onFormulaChanged = function(f) { viewer.setBody(f); }
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>test surface blockly</title>
+<script src="twgl-full_3.min.js"></script>
+<script src="blockly_compressed.js"></script>
+<script src="surfer_blockly.js"></script>
+<style>
+#blocklyDiv { width:800px; height:600px; }
+</style>
+</head>
+<body>
+<div id="blocklyDiv" ></div>
+
+ <xml id="toolbox" style="display: none">
+      <block type="u_param"></block>
+      <block type="v_param"></block>
+      <block type="t_param"></block>
+      <block type="math_number"></block>
+      <block type="translation"></block>
+      <block type="rotation"></block>
+      <block type="fun"></block>
+      <block type="linear"></block>
+</xml>
+
+<script>
+initializeSurfaceBlockly('blocklyDiv', 'toolbox');
+</script>
+</body>
+</html>

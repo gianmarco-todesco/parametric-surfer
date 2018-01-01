@@ -166,77 +166,7 @@ Blockly.defineBlocksWithJsonArray([
     }
 ]);
 
-
-/*
-
-
-Generator['translation'] = function(blk) {
-    var r = {};
-    r.x = getFieldValue(blk, 'X');
-    r.y = getFieldValue(blk, 'Y');
-    r.z = getFieldValue(blk, 'Z');
-    return r;
-};
-Generator['rotation'] = function(blk) {
-    var axis = blk.getFieldValue('AXIS');
-    var angle =  getFieldValue(blk, 'ANGLE');
-    var fn = 'rx';
-    if(axis == 'Z') fn = 'rz'; else if(axis == 'Y') fn = 'ry';
-    return 'p = '+fn+'(p,(' + angle + ')*PI);';
-};
-Generator['fun'] = function(blk) {
-    var fname = blk.getFieldValue('fname');
-    var arg = getFieldValue(blk, 'ARG', '0.0');
-    return fname + '((' + arg  + ')*PI)';
-};
-
-function getFieldValue(blk, name) {
-    const zero = { type: 'const', value:0.0 };
-    var node = blk.getInputTargetBlock(name);
-    if(!node) return zero;
-    var f = Generator[node.type];
-    if(f == null)  {
-        console.log("ops:", node.type);
-        return zero;
-    }
-    var value = Generator[node.type](node);
-    return value === null ? zero : value;
-}
-
-var formulas = [];
-var count = 0;
-
-function arrayEqual(a,b) {
-    if(a.length != b.length) return false;
-    for(var i=0;i<a.length;i++) if(a[i]!=b[i]) return false;
-    return true;
-}
-
-function foo() {
-    var newFormulas = [];
-    ws.getTopBlocks().forEach(function(blk) {
-    if(blk.type == 'translation' || blk.type ==  'rotation') {
-    var formula = '';
-    for(;;) {
-    var q = MyGen[blk.type](blk);
-    formula += q;
-    var nextBlock = blk.nextConnection && blk.nextConnection.targetBlock();
-    if(!nextBlock) break;
-    blk = nextBlock;
-    }
-    newFormulas.push(formula);
-    }
-    });
-    if(!arrayEqual(newFormulas, formulas)) {
-    count++;
-    console.log(count, newFormulas, formulas);
-    formulas = newFormulas;
-    please(formulas);
-    }
- }
-*/
-
- var ws;
+var ws;
  function initializeSurfaceBlockly(divName) {
     var toolbox = `<xml>
         <block type="u_param"></block>
@@ -267,31 +197,11 @@ function foo() {
         // trashcan: true,
         horizontalLayout: true,
     });
-    // ws.addChangeListener(foo); 
+    ws.addChangeListener(foo); 
     load();
  }
 
- 
-function foobar() {
-    var lst = [];
-    ws.getAllBlocks().forEach(function(blk) {
-        if(blk.type == 'output') {
-            var c = [];
-            var s = blk.previousConnection.targetBlock();
-            while(s) {
-                c.push(s);
-                s = s.previousConnection.targetBlock();                        
-            }
-            c.reverse();
-            console.log(c.map(b=>b.type));
-            lst.push(c);
-        }
-    });
-    return lst;
- }
- 
- 
-function save() {
+ function save() {
     var xml = Blockly.Xml.workspaceToDom(ws);
     var xml_text = Blockly.Xml.domToText(xml);
     localStorage.setItem('surfer2-ws',xml_text);
@@ -313,7 +223,7 @@ SimpleExpr.prototype.toString = function() {
     return this.str;
 }
 
-SimpleExpr.makeConst = function(v) {
+SimpleExpr.Const = function(v) {
     if(/^-?\d+$/.test(v)) {
         return new SimpleExpr(v + '.0');
     }
@@ -326,11 +236,11 @@ SimpleExpr.makeConst = function(v) {
     else throw "Bad constant value";
 }
 
-SimpleExpr.zero = SimpleExpr.makeConst(0);
-SimpleExpr.one = SimpleExpr.makeConst(1);
+SimpleExpr.Zero = SimpleExpr.Const(0);
+SimpleExpr.One = SimpleExpr.Const(1);
 
-SimpleExpr.makeParam = function(name) {
-    if(name == "u" || name == "v" || name == "t") 
+SimpleExpr.Param = function(name) {
+    if(name == "u" || name == "v" || name == "u_time") 
         return new SimpleExpr(name);
     else
         throw "Bad parameter";
@@ -355,118 +265,126 @@ SimpleExpr.prototype.mult = function(other) {
 SimpleExpr.prototype.fun = function(fname) {
     return new SimpleExpr(fname + "(" + this.str + ")");
 }
-
-function Expr(val,du,dv) {
-    this.val = val;
-    this.du = du;
-    this.dv = dv;
-}
-
-Expr.prototype.toString = function() {
-    return "val=" + this.val.toString() 
-         + " du=" + this.du.toString()
-         + " dv=" + this.dv.toString();
-}
-
-Expr.makeConst = function(v) {
-    return new Expr(
-        SimpleExpr.makeConst(v), 
-        SimpleExpr.zero, 
-        SimpleExpr.zero);
-}
-Expr.makeParam = function(name) {
-    var cdu = name == "u" ? SimpleExpr.one : SimpleExpr.zero;
-    var cdv = name == "v" ? SimpleExpr.one : SimpleExpr.zero;
-    return new Expr(SimpleExpr.makeParam(name), cdu, cdv);
-}
-Expr.prototype.add = function(other) {
-    return new Expr(
-        this.val.add(other.val),
-        this.du.add(other.du),
-        this.dv.add(other.dv),
-    );
-}
-Expr.prototype.mult = function(other) {
-    return new Expr(
-        this.val.mult(other.val),
-        this.du.mult(other.val).add(this.val.mult(other.du)),
-        this.dv.mult(other.val).add(this.val.mult(other.dv))
-    );
-}
-Expr.prototype.sin = function() {
-    return new Expr(
-        this.val.fun('sin'),
-        this.val.fun('cos').mult(this.du),
-        this.val.fun('cos').mult(this.dv)
-    );    
-}
-Expr.prototype.cos = function() {
-    return new Expr(
-        this.val.fun('cos'),
-        this.val.fun('-sin').mult(this.du),
-        this.val.fun('-sin').mult(this.dv)
-    );    
+SimpleExpr.prototype.sin = function() {
+    return new SimpleExpr("sin(" + this.str + ")");
 }
 
 
-var Generator = {};
-Generator['u_param'] = function(blk) { return Expr.makeParam('u'); }
-Generator['v_param'] = function(blk) { return Expr.makeParam('v'); }
-Generator['t_param'] = function(blk) { return Expr.makeParam('t'); }
-Generator['math_number'] = function(blk) {
+var GenVal = {};
+GenVal['u_param'] = function(blk) { return SimpleExpr.Param('u'); }
+GenVal['v_param'] = function(blk) { return SimpleExpr.Param('v'); }
+GenVal['t_param'] = function(blk) { return SimpleExpr.Param('u_time') }
+GenVal['math_number'] = function(blk) {
     var v = blk.getField('NUM').getValue();
     if(v===null) v = 0.0;
-    return Expr.makeConst(v);
+    return SimpleExpr.Const(v);
 };
-Generator['linear'] = function(blk) {
+GenVal['linear'] = function(blk) {
     var a = getFieldValue(blk, 'A', 1.0);
     var b = getFieldValue(blk, 'B', 1.0);
     var c = getFieldValue(blk, 'C', 0.0);
     return a.mult(b).add(c);
 };
-Generator['sin'] = function(blk) {
+GenVal['sin'] = function(blk) {
     var t = getFieldValue(blk, 'T', 1.0);
     var a = getFieldValue(blk, 'A', 1.0);
     var b = getFieldValue(blk, 'B', 0.0);
     var c = getFieldValue(blk, 'C', 1.0);
-    return t.mult(a).add(b).sin().mult(c);
+    return t.mult(a).add(b).mult(SimpleExpr.Const(Math.PI)).sin().mult(c);
 };
 
 function getBlockValue(blk, defValue) {
     defValue = defValue | 0.0;
-    var f = Generator[blk.type];
+    var f = GenVal[blk.type];
     if(f == null)  {
         console.log("ops:", blk.type);
-        return Expr.makeConst(defValue);
+        return SimpleExpr.Const(defValue);
     }
-    var value = Generator[blk.type](blk);
-    return value === null ? Expr.makeConst(defValue) : value;    
+    var value = GenVal[blk.type](blk);
+    return value === null ? SimpleExpr.Const(defValue) : value;    
 }
 
 function getFieldValue(blk, name, defValue) {
     var node = blk.getInputTargetBlock(name);
-    if(!node) return Expr.makeConst(defValue);
+    if(!node) return SimpleExpr.Const(defValue);
     else return getBlockValue(node, defValue);
 }
 
-Generator2 = {};
-Generator2['translation'] = function(blk) {
-    var prevBlk = blk.previousConnection.targetBlock();
-    if(prevBlk) {
-        Generator2[prevBlk.type](prevBlk);
+
+
+ 
+ function foo() {
+    var lst = [];
+    ws.getAllBlocks().forEach(function(blk) {
+        if(blk.type == 'output') {
+            var c = [];
+            var s = blk.previousConnection.targetBlock();
+            while(s) {
+                c.push(s);
+                s = s.previousConnection.targetBlock();                        
+            }
+            c.reverse();
+            // console.log(c.map(b=>b.type));
+            // lst.push(c);
+            foo1(c);
+        }
+    });
+    return lst;
+ }
+
+var onFormulaChanged = function(s) {}
+var oldFormula = 'p = vec3(0.0,0.0,0.0);';
+
+function foo1(lst) {
+     var s = "";
+     for(var i=0; i<lst.length; i++) {
+         var item = lst[i];
+         s += GenBlock[item.type](item);
+     }
+     if(s != oldFormula) {
+        console.log(s);
+        oldFormula = s;
+        onFormulaChanged(s);
+     }
+}
+ 
+ 
+ 
+ 
+function getBlockValue(blk, defValue) {
+    defValue = defValue | 0.0;
+    var f = GenVal[blk.type];
+    if(f == null)  {
+        console.log("ops:", blk.type);
+        return SimpleExpr.Const(defValue);
     }
+    var value = GenVal[blk.type](blk);
+    return value === null ? SimpleExpr.Const(defValue) : value;    
+}
+
+function getFieldValue(blk, name, defValue) {
+    var node = blk.getInputTargetBlock(name);
+    if(!node) return SimpleExpr.Const(defValue);
+    else return getBlockValue(node, defValue);
+}
+
+ 
+GenBlock = {};
+GenBlock.translation = function(blk) {
     var x = getFieldValue(blk, 'X', 0.0);
     var y = getFieldValue(blk, 'Y', 0.0);
     var z = getFieldValue(blk, 'Z', 0.0);
-    console.log('Translate');
-    console.log('  x ', x.toString());
-    console.log('  y ', x.toString());
-    console.log('  z ', x.toString());
-    
-};
-
-var b;
-function foo() {
-    b = foobar()[0][0];
-    ris = Generator2[b.type](b);
-}
+    var s = "p += vec3(" + x + "," + y + "," + z + "); ";
+    // console.log(s);
+    return s;
+} 
+GenBlock.rotation = function(blk) {
+    var axis = blk.getFieldValue('AXIS');
+    var angle =  getFieldValue(blk, 'ANGLE', 0.0);
+    var fn = 'rx';
+    if(axis == 'Z') fn = 'rz'; else if(axis == 'Y') fn = 'ry';
+    s = 'p = '+fn+'(p,' + angle.mult(SimpleExpr.Const('PI')).toString() + '); ';   
+    // console.log(s);
+    return s;
+} 
+ 
